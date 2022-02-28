@@ -7,14 +7,36 @@ class MoviesController < ApplicationController
     end
   
     def index
-      if params[:sort] == "title"
-        @movies = Movie.order(:title)
-        @sortedColumn = "title"
-      elsif params[:sort] == "release_date"
-        @movies = Movie.order(:release_date)
-        @sortedColumn = "release_date"
-      else  
-        @movies = Movie.all
+      
+      @movies = Movie.all
+      @all_ratings = Movie.distinct.pluck(:rating)
+      
+      unless session.key?(:ratings)
+        session[:ratings] = Movie.distinct.pluck(:rating)
+      end
+      unless session.key?(:sort)
+        session[:sort] = ''
+      end
+      
+      if params.key?(:ratings)
+        session[:ratings] = params[:ratings].keys
+      end
+      if params.key?(:sort)
+        if session[:sort] == params[:sort]
+          session[:sort] = ''
+        else
+          session[:sort] = params[:sort]
+        end
+      end
+        
+      @movies = @movies.where(rating: session[:ratings])
+      @filteredRatings = session[:ratings]
+      @sortedColumn = session[:sort]
+      
+      if session[:sort] == 'title'
+        @movies = @movies.order('title': :asc)
+      elsif session[:sort] == 'release_date'
+        @movies = @movies.order('release_date': :asc)
       end
     end
   
